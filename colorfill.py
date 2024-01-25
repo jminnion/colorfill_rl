@@ -152,5 +152,35 @@ class Blob:
     @property.setter
     def filled_color(self, new_color: Color) -> None:
         self._filled_color = new_color
+        self._update_color()    # updates the color of all Tiles in Blob
 
+    def append(self, new_tile: Tile) -> None:
+        self._filled_tiles.append(new_tile)
+
+    def remove(self, tile_to_remove: Tile) -> None:
+        if (tile_to_remove in self._filled_tiles):
+            self._filled_tiles.remove(tile_to_remove)
+
+    def _update_color(self) -> None:
+        """
+        Private method called when self.filled_color property is updated.
+        Updates the Color of all Tiles in Blob.
+        """
+        for this_tile in self._filled_tiles:
+            this_tile.color = self._filled_color
+
+    def __iter__(self) -> list[Tile]:
+        return self._filled_tiles
     
+
+class Board:
+    """
+    A representation of the game board. Contains Tiles and one Blob.
+    """
+    # constants
+
+    # methods
+    def __init__(self) -> None:
+        # todo
+        pass
+
