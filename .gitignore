@@ -2,3 +2,5 @@
 .venv
 data
 scratch.ipynb
+scratch.py
+__pycache__
