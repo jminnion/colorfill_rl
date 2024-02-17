@@ -269,7 +269,7 @@ class Blob:
             this_tile.color = self._filled_color
 
     def __iter__(self) -> list[Tile]:
-        return self._filled_tiles
+        return iter(self._filled_tiles)
     
     def __len__(self) -> int:
         return len(self._filled_tiles)
@@ -277,7 +277,7 @@ class Blob:
     def __getitem__(self, index: int) -> Tile:
         """
             Grabs the Tile at given numeric index. 
-            Allows use of subscript (may be implied by __iter__, to be tested).
+            Allows use of subscript.
 
             TODO: explore if this should be a subclass "BlobQueue"
         """
