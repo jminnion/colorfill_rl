@@ -238,7 +238,7 @@ class Board:
 
     # methods
     def __init__(self, tiles: list[list[Tile]] = None) -> None:
-        self.tiles = tiles  # BYO tiles
+        self.tiles: list[list[Tile]] = tiles  # BYO tiles
         
         if (tiles is None):
             self.tiles = Board.make_random_board()  # if you left your tiles at home
@@ -248,6 +248,20 @@ class Board:
 
         # make the zeroth move to check for adjacent Tiles of the same color as the first
         self.init_blob()
+
+    def __getitem__(self, key: tuple[int, int]) -> Tile | None:
+        """Allows subscripting to grab Tile objects.
+            Ex: a_board[0,1] --> provides the Tile in row zero, column one."""
+        this_tile = None
+        try:
+            this_tile = self.tiles[key[0]][key[1]]
+        except:
+            raise TypeError(
+                f"""Board.__getitem__: couldn't process provided key: {key}
+                    Note key must be a 2-tuple of integers within range [0,13].
+                    Example: board[5,5] --> this would provide key=(5,5)."""
+                )
+        return this_tile
 
     def init_blob(self) -> None:
         pass # TODO
@@ -381,3 +395,14 @@ class Board:
         
         return board_tile_list
 
+    def to_numpy_matrix(self) -> np.ndarray:
+        """Convert this Board into a numpy matrix of color indices.
+            Used as a lightweight means of transferring this Board's state.
+            Useful for plotting / generating image of the Board."""
+        board_matrix = np.full(shape=(self.N_ROWS, self.N_COLS), fill_value=-1)
+
+        for i in range(self.N_ROWS):
+            for j in range(self.N_COLS):
+                board_matrix[i,j] = self.tiles[i][j].color.color_index
+        
+        return board_matrix
