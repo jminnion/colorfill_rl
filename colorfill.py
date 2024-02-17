@@ -21,9 +21,6 @@ class Color:
     """
     # constants
     N_COLORS: int = 6
-    COLOR_LIST: list[int] = list(range(0, N_COLORS))
-    COLOR_NAMES: list[str] = ["Blue", "Black", "Red", "Yellow", "Orange", "White"]
-    COLOR_NAMES_SHORT: list[str] = ["B", "K", "R", "Y", "O", "W"]
     COLOR_RGB = [
         (0, 0, 255),    # blue
         (0, 0, 0),      # black
@@ -33,9 +30,45 @@ class Color:
         (255, 255, 255) # white
     ]
 
+    _COLOR_DICT_INDEX_TO_NAME = {
+        0: "Blue",
+        1: "Black",
+        2: "Red",
+        3: "Yellow",
+        4: "Orange",
+        5: "White",
+    }
+
+    _COLOR_DICT_NAME_TO_INDEX = {
+        "Blue": 0,
+        "Black": 1,
+        "Red": 2,
+        "Yellow": 3,
+        "Orange": 4,
+        "White": 5
+    }
+
+    _COLOR_DICT_INDEX_TO_SHORT_NAME = {
+        0: "B",
+        1: "K",
+        2: "R",
+        3: "Y",
+        4: "O",
+        5: "W",
+    }
+
+    _COLOR_DICT_SHORT_NAME_TO_INDEX = {
+        "B": 0,
+        "K": 1,
+        "R": 2,
+        "Y": 3,
+        "O": 4,
+        "W": 5
+    }
+
     # methods
     def __init__(self, color_index: int) -> None:
-        assert color_index in self.COLOR_LIST
+        assert color_index in range(0, self.N_COLORS)
         self._color_index: int = color_index
 
     def __eq__(self: Self, other: Self) -> bool:
@@ -44,26 +77,50 @@ class Color:
     def __hash__(self) -> int:
         return self.color_index
     
+    def __repr__(self) -> str:
+        return f"Color({self.color_name})"
+    
     @property
     def color_index(self) -> int:
         return self._color_index
     
     @color_index.setter
     def color_index(self, new_index: int) -> None:
-        assert new_index in self.COLOR_LIST
+        assert new_index in range(0, self.N_COLORS)
         self._color_index = new_index
 
     @property
     def color_name(self) -> str:
-        return self.COLOR_NAMES[self._color_index]
+        return self._COLOR_DICT_INDEX_TO_NAME[self._color_index]
     
     @property
     def color_name_short(self) -> str:
-        return self.COLOR_NAMES_SHORT[self._color_index]
+        return self._COLOR_DICT_INDEX_TO_SHORT_NAME[self._color_index]
 
     @property
     def color_rgb(self) -> tuple[int, int, int]:
         return self.COLOR_RGB[self._color_index]
+    
+    @classmethod
+    def by_name(cls, name: str) -> Self:
+        return Color(color_index=cls._COLOR_DICT_NAME_TO_INDEX[name])
+    
+    @classmethod
+    def by_short_name(cls, short_name: str) -> Self:
+        return Color(color_index=cls._COLOR_DICT_SHORT_NAME_TO_INDEX[short_name])
+    
+    @classmethod
+    def __class_getitem__(cls, name):
+        """Returns a Color object based on the color name provided (e.g. "Blue")."""
+        try:
+            if (len(name) > 1):     # full name, e.g. "Blue"
+                color_index = cls._COLOR_DICT_NAME_TO_INDEX[name]
+            else:   # short name, e.g. "B"
+                color_index = cls._COLOR_DICT_SHORT_NAME_TO_INDEX[name]
+            
+            return(Color(color_index))
+        except:
+            raise IndexError(f"!!! Color.__class_getitem__: provided color name '{name}' caused an error.")
     
 
 class Position:
