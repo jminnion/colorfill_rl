@@ -111,7 +111,14 @@ class Color:
     
     @classmethod
     def __class_getitem__(cls, name):
-        """Returns a Color object based on the color name provided (e.g. "Blue")."""
+        """
+            Returns a Color object based on the color name provided (e.g. "Blue").
+            Useful for creating a "move" for Board.make_move(...).
+
+            Usage: 
+                a = Color["Blue"]   # `a` will contain a Color object with Blue (color_index=0)
+                b = Color['K']      # `b` will contain a Color object with Black (color_index=1)
+        """
         try:
             if (len(name) > 1):     # full name, e.g. "Blue"
                 color_index = cls._COLOR_DICT_NAME_TO_INDEX[name]

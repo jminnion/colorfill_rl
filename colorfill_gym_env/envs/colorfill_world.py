@@ -15,6 +15,9 @@ import pygame
 
 from gymnasium import spaces
 
+# import from within package
+import colorfill as cf
+
 
 ### CLASS DEFINITIONS ###
 class ColorfillWorldEnv(gym.Env):
@@ -26,14 +29,45 @@ class ColorfillWorldEnv(gym.Env):
         self.size = size
         self.window_size = 560      # =14*40, for 40px per Tile
 
-        # TODO - self.observation_space
-        # TODO - self.action_space
+        # observation space
+        """
+          Need to explore this more but for now the observation space can be a Dict
+          containing the Board (as a Box space) and the Board's Blob (as a Box space).
+            - The Board will be a 14x14 grid containing integers [0,5] representing the
+              six possible colors.
+            - The Blob will be a 14x14 grid containing integers [0,1] representing the
+              flooded area of the Board (1=filled, 0=not yet filled)
+          May want to revisit this later for MultiDiscrete or MultiBinary spaces, or even
+          splitting the Board into six MultiBinary spaces for each color?
+        """
+        self._obs_shape = (self.size, self.size)
+        self.observation_space = spaces.Dict(
+            {
+                "board": spaces.Box(low=0, high=5, shape=self._obs_shape, dtype=int),
+                "blob": spaces.Box(low=0, high=1, shape=self._obs_shape, dtype=int),
+            }
+        )
+
+        # action space
+        #   There are six colors available, though you realistically can choose from a max of
+        #   five colors at each turn (choosing the same color twice in a row is silly).
+        self.action_space = spaces.Discrete(n=6)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
         self.window = None
         self.clock = None
+
+    def _get_obs(self):
+        # TODO - helper function to grab an observation using the Board.to_numpy_matrix() and
+        #   (yet to be written) Blob.to_numpy_matrix() functions? Will Board be stored somewhere?
+        obs = {
+            "board": None,
+            "blob": None
+        }
+        
+        return obs
 
     def reset(self, 
               seed: int|None = None,
