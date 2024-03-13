@@ -60,11 +60,9 @@ class ColorfillWorldEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        # TODO - helper function to grab an observation using the Board.to_numpy_matrix() and
-        #   (yet to be written) Blob.to_numpy_matrix() functions? Will Board be stored somewhere?
         obs = {
             "board": self._board.to_numpy_matrix(),
-            "blob": None
+            "blob": self._board.blob_as_numpy_matrix(),
         }
         
         return obs
@@ -82,11 +80,11 @@ class ColorfillWorldEnv(gym.Env):
         # initiate a new episode
         #   make a new Board
         self._board: cf.Board = cf.Board(rand_generator=self.np_random)
+        self._score: int = 0
+        self._moves: list[int] = []
 
-
-
-        observation = None
-        info = None
+        observation = self._get_obs()
+        info = self._get_info()
 
         # TODO - render for "human" render_mode
 
@@ -94,8 +92,26 @@ class ColorfillWorldEnv(gym.Env):
     
     def step(self, 
              action) -> tuple:    # TODO - define `action` type and tuple element types
-        # TODO - take a given action (move) and compute new board
-        pass
+        # map action -> color
+        action_color = cf.Color(color_index=action)
+
+        # count tiles in the Blob before move
+        tile_count_before = self._board.blob.n_tiles
+
+        # apply the move to the board
+        # TODO - stopped here
+
+    def _score_move(self, delta_tiles: int) -> int:
+        if (delta_tiles == 0):
+            return 0
+        
+        per_block_bonus = (delta_tiles - 1) * 100
+        move_score = (1000 + per_block_bonus) * delta_tiles
+
+        return move_score
+    
+    def _final_move_bonus(self, turn_number: int) -> int:
+        return 2000 * (turn_number**2) - (100000 * turn_number) + 1300000
 
     def render(self):
         if self.render_mode == "rgb_array":

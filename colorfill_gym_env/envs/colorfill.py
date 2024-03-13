@@ -520,3 +520,5 @@ class Board:
         for tile in self.blob:
             x, y = tile.position.row, tile.position.col
             blob_matrix[x,y] = 1
+
+        return blob_matrix
