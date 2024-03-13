@@ -67,7 +67,7 @@ class Color:
     }
 
     # methods
-    def __init__(self, color_index: int) -> None:
+    def __init__(self, color_index: int) -> Self:
         assert color_index in range(0, self.N_COLORS)
         self._color_index: int = color_index
 
@@ -142,7 +142,7 @@ class Position:
     # constants
 
     # methods
-    def __init__(self, row: int, col: int) -> None:
+    def __init__(self, row: int, col: int) -> Self:
         self.row: int = row
         self.col: int = col
 
@@ -183,11 +183,11 @@ class Tile:
     # constants
 
     # methods
-    def __init__(self, color: Color, position: Position) -> None:
+    def __init__(self, color: Color, position: Position) -> Self:
         self._color: Color = color
         self._position: Position = position
     
-    def neighbors(self) -> dict[Position]:
+    def neighbors(self) -> dict[str, Position]:
         return self._position.neighbors()
     
     @property
@@ -227,7 +227,7 @@ class Blob:
     # constants
 
     # methods
-    def __init__(self, first_tile: Tile) -> None:
+    def __init__(self, first_tile: Tile) -> Self:
         self._filled_tiles: list[Tile] = [first_tile]
         self._filled_color: Color = first_tile.color
 
@@ -301,11 +301,20 @@ class Board:
     SEED: int = 27      # for Weird Al fans, incl. me
 
     # methods
-    def __init__(self, tiles: list[list[Tile]] = None) -> None:
+    def __init__(self, 
+                 tiles: list[list[Tile]] = None,
+                 rows: int = N_ROWS,
+                 cols: int = N_COLS, 
+                 seed: int = SEED,
+                 rand_generator: np.random.Generator|None = None) -> Self:
         self.tiles: list[list[Tile]] = tiles  # BYO tiles
+        self.rows: int = rows
+        self.cols: int = cols
         
-        if (tiles is None):
-            self.tiles = Board.make_random_board()  # if you left your tiles at home
+        if (tiles is None and rand_generator is None):
+            self.tiles = Board.make_random_board(rows, cols, seed)  # if you left your tiles at home
+        elif (tiles is None and rand_generator is not None):
+            self.tiles = Board.make_random_board(rand_generator=rand_generator)
 
         # start the blob (in Chester County, PA)
         self.blob: Blob = Blob(self.tiles[0][0])
@@ -328,7 +337,10 @@ class Board:
         return this_tile
 
     def init_blob(self) -> None:
-        pass # TODO
+        # if the first tile is already touching other tiles of the same color,
+        #   expand the initial Blob to include those tiles.
+        first_tile_color: Color = self.blob[0].color
+        self.make_move(first_tile_color)
 
     def test_move(self) -> Any:
         """
@@ -425,14 +437,44 @@ class Board:
 
     def possible_moves(self) -> list[Color]:
         """Returns a list of possible moves (as a list of Colors) on the Board with respect to its current Blob."""
-        # TODO
-        pass
+        possible_moves: list[Color] = []
+        blob_color: Color = self.blob.filled_color
+
+        tile: Tile
+        for tile in self.blob:
+            neighbors: dict[str, Position] = tile.neighbors()
+
+            neighbor_position: Position
+            for neighbor_position in neighbors.values():
+                if (self.is_valid_position(neighbor_position)):
+                    neighbor_tile: Tile = self.tile_at_position(neighbor_position)
+                    neighbor_color: Color = neighbor_tile.color
+
+                    if (neighbor_color != blob_color):
+                        if (neighbor_color not in possible_moves):
+                            possible_moves.append(neighbor_color)
+                
+                if (len(possible_moves) == 5):
+                    break
+            if (len(possible_moves) == 5):
+                break
+        
+        return possible_moves
+
 
     @staticmethod
-    def make_random_board(rows: int = N_ROWS, cols: int = N_COLS, seed: int = SEED) -> list[list[Tile]]:
+    def make_random_board(rows: int = N_ROWS, 
+                          cols: int = N_COLS, 
+                          seed: int = SEED,
+                          rand_generator: np.random.Generator|None = None
+                          ) -> list[list[Tile]]:
         # generate board as numpy ndarray
-        np.random.seed(seed=seed)
-        board_matrix: np.ndarray = np.random.randint(low=0, high=Color.N_COLORS, size=(rows, cols))
+        if (rand_generator is None):
+            np.random.seed(seed=seed)
+            board_matrix: np.ndarray = np.random.randint(low=0, high=Color.N_COLORS, size=(rows, cols))
+        else:
+            # if RNG provided, assume already seeded
+            board_matrix: np.ndarray = rand_generator.integers(low=0, high=Color.N_COLORS, size=(rows, cols))
 
         # convert type and return
         return Board.from_numpy_matrix(board_matrix)
@@ -470,3 +512,11 @@ class Board:
                 board_matrix[i,j] = self.tiles[i][j].color.color_index
         
         return board_matrix
+    
+    def blob_as_numpy_matrix(self) -> np.ndarray:
+        blob_matrix = np.full(shape=(self.rows, self.cols), fill_value=0)
+
+        tile: Tile
+        for tile in self.blob:
+            x, y = tile.position.row, tile.position.col
+            blob_matrix[x,y] = 1

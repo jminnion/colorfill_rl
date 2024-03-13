@@ -16,7 +16,7 @@ import pygame
 from gymnasium import spaces
 
 # import from within package
-import colorfill as cf
+import colorfill_gym_env.envs.colorfill as cf
 
 
 ### CLASS DEFINITIONS ###
@@ -63,19 +63,28 @@ class ColorfillWorldEnv(gym.Env):
         # TODO - helper function to grab an observation using the Board.to_numpy_matrix() and
         #   (yet to be written) Blob.to_numpy_matrix() functions? Will Board be stored somewhere?
         obs = {
-            "board": None,
+            "board": self._board.to_numpy_matrix(),
             "blob": None
         }
         
         return obs
+    
+    def _get_info(self):
+        return {}
 
     def reset(self, 
               seed: int|None = None,
-              options: dict[str, Any]|None = None) -> tuple:    # TODO - define tuple element types
+              options: dict[str, Any]|None = None
+              ) -> tuple:    # TODO - define tuple element types
         # seeds self.np_random
         super().reset(seed=seed)
 
-        # TODO - initiate a new episode
+        # initiate a new episode
+        #   make a new Board
+        self._board: cf.Board = cf.Board(rand_generator=self.np_random)
+
+
+
         observation = None
         info = None
 
