@@ -68,7 +68,17 @@ class ColorfillWorldEnv(gym.Env):
         return obs
     
     def _get_info(self):
-        return {}
+        num_tiles_total: int = self.size**2     # =14*14=196
+        num_tiles_filled: int = self._board.blob.n_tiles
+        is_board_filled: bool = (num_tiles_filled == num_tiles_total)
+        num_moves_made: int = len(self._moves)
+
+        return {
+            "num_tiles_total": num_tiles_total,
+            "num_tiles_filled": num_tiles_filled,
+            "is_board_filled": is_board_filled,
+            "num_moves_made": num_moves_made
+        }
 
     def reset(self, 
               seed: int|None = None,
