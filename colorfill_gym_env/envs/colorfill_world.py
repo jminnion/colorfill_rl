@@ -27,7 +27,8 @@ class ColorfillWorldEnv(gym.Env):
                  render_mode: str|None = None, 
                  size: int = 14):
         self.size = size
-        self.window_size = 560      # =14*40, for 40px per Tile
+        self.window_size_height = 700
+        self.window_size_width = 600
 
         # observation space
         """
@@ -96,7 +97,8 @@ class ColorfillWorldEnv(gym.Env):
         observation = self._get_obs()
         info = self._get_info()
 
-        # TODO - render for "human" render_mode
+        if (self.render_mode == "human"):
+            self._render_frame()
 
         return observation, info
     
@@ -110,6 +112,16 @@ class ColorfillWorldEnv(gym.Env):
 
         # apply the move to the board
         # TODO - stopped here
+
+        info = self._get_info()
+        terminated = info["is_board_filled"] or (info["num_moves_made"] > 24)
+        reward = 1  # TODO - define reward function
+        observation = self._get_obs()
+
+        if (self.render_mode == "human"):
+            self._render_frame()
+        
+        return observation, reward, terminated, False, info
 
     def _score_move(self, delta_tiles: int) -> int:
         if (delta_tiles == 0):
@@ -128,8 +140,86 @@ class ColorfillWorldEnv(gym.Env):
             return self._render_frame()
         
     def _render_frame(self):
-        pass
+        # rendering constants
+        rgb_black: tuple[int, int, int] = (0, 0, 0)
+        rgb_gray: tuple[int, int, int] = (128, 128, 128)
+        rgb_white: tuple[int, int, int] = (255, 255, 255)
+        dim_tile_px: int = 40    # tile size (height and width) in pixels
+        dim_board_px: int = dim_tile_px * self.size
+
+        # setup objects if human mode
+        if (self.window is None and self.render_mode == "human"):
+            pygame.init()
+            pygame.display.init()
+            self.window = pygame.display.set_mode(
+                (self.window_size_width, self.window_size_height)
+            )
+        
+        if (self.clock is None and self.render_mode == "human"):
+            self.clock = pygame.time.Clock()
+
+        # render the board as a Surface
+        board_surface: pygame.Surface = pygame.Surface((dim_board_px, dim_board_px))
+
+        top, left = 0, 0
+        width, height = dim_tile_px, dim_tile_px
+        rows, cols = self._board.N_ROWS, self._board.N_COLS
+
+        for i in range(rows):
+            for j in range(cols):
+                top = i * dim_tile_px
+                left = j * dim_tile_px
+                tile_color_rgb: tuple[int, int, int] = self._board.tile_at_position(cf.Position(i,j)).color.color_rgb
+
+                pygame.draw.rect(board_surface, tile_color_rgb, pygame.Rect((left, top), (width, height)))
+
+        # render canvas
+        canvas = pygame.Surface((self.window_size_width, self.window_size_height))
+
+        margin_board_top: int = 20
+        margin_board_left: int = (canvas.get_width() - canvas.get_height()) // 2
+        margin_board_bottom: int = margin_board_top
+        text_area_top: int = margin_board_top + board_surface.get_height() + margin_board_bottom
+        text_area_left: int = margin_board_left
+        spacing_text: int = 0
+
+        #   add board to canvas
+        canvas.fill(rgb_gray)
+        canvas.blit(board_surface, (margin_board_left, margin_board_top))
+
+        #   add game stats to canvas
+        font = pygame.font.SysFont('DM Mono Regular', 18, bold=True, italic=False)
+
+        if (len(self._moves) > 0):
+            last_move_color_name: str = cf.Color(self._moves[-1]).color_name.upper()
+            last_move_color_rgb: tuple[int,int,int] = cf.Color(self._moves[-1]).color_rgb
+        else:
+            last_move_color_name: str = "N/A"
+            last_move_color_rgb: tuple[int,int,int] = rgb_black
+        
+        text_score = font.render(f"> SCORE: {self._score:,}", True, rgb_black)
+        text_n_moves = font.render(f"> N MOVES: {len(self._moves)} / 25", True, rgb_black)
+        text_last_move = font.render(f"> LAST MOVE: {last_move_color_name}", True, last_move_color_rgb)
+
+        canvas.blit(text_score, (text_area_left, text_area_top))
+        text_area_top += text_score.get_height() + spacing_text
+        canvas.blit(text_n_moves, (text_area_left, text_area_top))
+        text_area_top += text_n_moves.get_height() + spacing_text
+        canvas.blit(text_last_move, (text_area_left, text_area_top))
+
+        # now pick where the canvas goes
+        if (self.render_mode == "human"):
+            self.window.blit(canvas, canvas.get_rect())
+            pygame.event.pump()
+            pygame.display.update()
+            self.clock.tick(self.metadata["render_fps"])
+        else:   # i.e., "rgb_array"
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
+            )
 
     def close(self):
-        pass
+        if (self.window is not None):
+            pygame.display.quit()
+            pygame.quit()
     
