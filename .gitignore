@@ -4,3 +4,4 @@ data
 scratch.ipynb
 scratch.py
 __pycache__
+.vscode

@@ -149,6 +149,9 @@ class ColorfillWorldEnv(gym.Env):
     
     def _final_move_bonus(self, turn_number: int) -> int:
         return 2000 * (turn_number**2) - (100000 * turn_number) + 1300000
+    
+    def _reward(self, board_before, board_after, info):
+        return self._score / 1e6
 
     def render(self):
         if self.render_mode == "rgb_array":
