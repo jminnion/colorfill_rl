@@ -60,6 +60,11 @@ class ColorfillWorldEnv(gym.Env):
         self.window = None
         self.clock = None
 
+        # make placeholder definitions for some more instance variables
+        self._board: cf.Board = None
+        self._score: int = None
+        self._moves: list[int] = None
+
     def _get_obs(self):
         obs = {
             "board": self._board.to_numpy_matrix(),
@@ -111,10 +116,20 @@ class ColorfillWorldEnv(gym.Env):
         tile_count_before = self._board.blob.n_tiles
 
         # apply the move to the board
-        # TODO - stopped here
+        self._board.make_move(move_color=action_color)
 
+        # count tiles in the Blob after move
+        tile_count_after = self._board.blob.n_tiles
+        delta_tiles = tile_count_after - tile_count_before
+
+        # update score      
         info = self._get_info()
         terminated = info["is_board_filled"] or (info["num_moves_made"] > 24)
+
+        self._score += self._score_move(delta_tiles=delta_tiles)
+        if (terminated):
+            self._score += self._final_move_bonus(turn_number=info["num_moves_made"])
+
         reward = 1  # TODO - define reward function
         observation = self._get_obs()
 
